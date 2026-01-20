@@ -1,76 +1,25 @@
-import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { useSession } from "../../context/SessionContext";
-import supabase from "../../supabase";
+import { GalleryVerticalEnd } from "lucide-react";
 
-const SignUpPage = () => {
-  // ==============================
-  // If user is already logged in, redirect to home
-  // This logic is being repeated in SignIn and SignUp..
-  const { session } = useSession();
-  if (session) return <Navigate to="/" />;
-  // maybe we can create a wrapper component for these pages
-  // just like the ./router/AuthProtectedRoute.tsx? up to you.
-  // ==============================
-  const [status, setStatus] = useState("");
-  const [formValues, setFormValues] = useState({
-    email: "",
-    password: "",
-  });
+import { SignUpForm } from "@/components/sign-up-form";
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormValues({ ...formValues, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setStatus("Creating account...");
-    const { error } = await supabase.auth.signUp({
-      email: formValues.email,
-      password: formValues.password,
-    });
-    if (error) {
-      alert(error.message);
-    }
-    setStatus("");
-  };
-
+export default function SignupPage() {
   return (
-    <main>
-      <Link className="home-link" to="/">
-        ◄ Home
-      </Link>
-      <form className="main-container" onSubmit={handleSubmit}>
-        <h1 className="header-text">Sign Up</h1>
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: "0.8rem",
-            color: "#777",
-          }}
-        >
-          Demo app, please don't use your real email or password
-        </p>
-        <input
-          name="email"
-          onChange={handleInputChange}
-          type="email"
-          placeholder="Email"
-        />
-        <input
-          name="password"
-          onChange={handleInputChange}
-          type="password"
-          placeholder="Password"
-        />
-        <button type="submit">Create Account</button>
-        <Link className="auth-link" to="/auth/sign-in">
-          Already have an account? Sign In
-        </Link>
-        {status && <p>{status}</p>}
-      </form>
-    </main>
+    <div className="grid min-h-svh lg:grid-cols-1">
+      <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex justify-center gap-2 md:justify-start">
+          <a href="#" className="flex items-center gap-2 font-medium">
+            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            Acme Inc.
+          </a>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-xs">
+            <SignUpForm />
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
-
-export default SignUpPage;
+}
