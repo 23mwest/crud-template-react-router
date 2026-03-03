@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import SignInPage from "../pages/auth/SignInPage.tsx";
 import SignUpPage from "../pages/auth/SignUpPage.tsx";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage.tsx";
 import ProtectedPage from "../pages/ProtectedPage.tsx";
 import NotFoundPage from "../pages/404Page.tsx";
 import AuthProtectedRoute from "./AuthProtectedRoute.tsx";
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
           {
             path: "/auth/sign-in",
             element: <SignInPage />,
+          },
+          {
+            path: "/auth/forgot-password",
+            element: <ForgotPasswordPage />,
           },
         ],
       },
