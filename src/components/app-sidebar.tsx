@@ -6,7 +6,9 @@ import {
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
 import { VersionSwitcher } from "@/components/version-switcher";
+import supabase from "@/supabase";
 import {
   Sidebar,
   SidebarContent,
@@ -41,14 +43,27 @@ const data = {
       icon: IconSettings,
     },
     {
-      title: "Log Out",
+      title: "Log out",
       url: "#",
       icon: IconDoorExit,
+      action: "logout",
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
+
+  const handleLogOut = async () => {
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) {
+      console.error("Failed to log out:", error.message);
+      return;
+    }
+
+    navigate("/auth/sign-in", { replace: true });
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -59,14 +74,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>
-              {item.icon && <item.icon className="mr-2" />}
-              {item.title}
-            </SidebarGroupLabel>
-          </SidebarGroup>
-        ))}
+        {data.navMain.map((item) => {
+          const isLogOut = item.action === "logout";
+
+          return (
+            <SidebarGroup key={item.title}>
+              <SidebarGroupLabel asChild={isLogOut}>
+                {isLogOut ? (
+                  <button type="button" onClick={handleLogOut}>
+                    {item.icon && <item.icon className="mr-2" />}
+                    {item.title}
+                  </button>
+                ) : (
+                  <>
+                    {item.icon && <item.icon className="mr-2" />}
+                    {item.title}
+                  </>
+                )}
+              </SidebarGroupLabel>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
