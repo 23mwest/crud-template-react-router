@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,27 +10,51 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import supabase from '../supabase'
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [step, setStep] = useState<'request' | 'verify'>('request')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    const supabase = createClient()
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'http://localhost:3000/update-password',
-      })
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
       if (error) throw error
-      setSuccess(true)
+      setStep('verify')
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerifyCodeAndReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: 'recovery',
+      })
+      if (verifyError) throw verifyError
+
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      if (updateError) throw updateError
+
+      navigate('/protected', { replace: true })
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -41,17 +64,59 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
-      {success ? (
+      {step === 'verify' ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl">Enter Verification Code</CardTitle>
+            <CardDescription>
+              Enter the one-time code sent to <span className="font-medium">{email}</span>, then
+              set your new password.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive a password reset
-              email.
-            </p>
+            <form onSubmit={handleVerifyCodeAndReset}>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="otp-code">One-time code</Label>
+                  <Input
+                    id="otp-code"
+                    type="text"
+                    placeholder="123456"
+                    required
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="new-password">New password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                {error && <p className="text-sm text-red-500">{error}</p>}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Resetting...' : 'Verify code and reset password'}
+                </Button>
+              </div>
+              <div className="mt-4 text-center text-sm">
+                <button
+                  type="button"
+                  className="underline underline-offset-4"
+                  onClick={() => {
+                    setStep('request')
+                    setOtpCode('')
+                    setNewPassword('')
+                    setError(null)
+                  }}
+                >
+                  Use a different email
+                </button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       ) : (
@@ -59,11 +124,11 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
           <CardHeader>
             <CardTitle className="text-2xl">Reset Your Password</CardTitle>
             <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your password
+              Enter your email and we&apos;ll send a one-time code to reset your password.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleForgotPassword}>
+            <form onSubmit={handleSendCode}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
@@ -78,7 +143,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Sending...' : 'Send reset email'}
+                  {isLoading ? 'Sending...' : 'Send one-time code'}
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
