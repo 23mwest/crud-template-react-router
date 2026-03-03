@@ -1,5 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
-import HomePage from "../pages/HomePage.tsx";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import SignInPage from "../pages/auth/SignInPage.tsx";
 import SignUpPage from "../pages/auth/SignUpPage.tsx";
 import ProtectedPage from "../pages/ProtectedPage.tsx";
@@ -16,7 +15,7 @@ const router = createBrowserRouter([
       // Public routes
       {
         path: "/",
-        element: <HomePage />,
+        element: <Navigate to="/auth/sign-in" replace />,
       },
       {
         path: "/auth",
