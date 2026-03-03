@@ -5,7 +5,7 @@ const AuthProtectedRoute = () => {
   const { session } = useSession();
   if (session) {
     // or you can redirect to a different page and show a message
-    return <Navigate to="/" />;
+    return <Navigate to="/protected" replace />;
   }
   return <Outlet />;
 };
